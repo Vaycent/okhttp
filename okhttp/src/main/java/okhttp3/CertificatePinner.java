@@ -262,11 +262,11 @@ public final class CertificatePinner {
     }
 
     boolean matches(String hostname) {
-      if (pattern.equals(hostname)) return true;
+      if (pattern.equalsIgnoreCase(hostname)) return true;
 
       int firstDot = hostname.indexOf('.');
       return pattern.startsWith("*.")
-          && hostname.regionMatches(false, firstDot + 1, pattern, 2, pattern.length() - 2);
+          && hostname.regionMatches(true, firstDot + 1, pattern, 2, pattern.length() - 2);
     }
 
     @Override public boolean equals(Object other) {

@@ -16,6 +16,7 @@
 package okhttp3;
 
 import java.security.GeneralSecurityException;
+import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -252,5 +253,37 @@ public final class CertificatePinnerTest {
 
     assertEquals(Collections.emptyList(), certificatePinner.findMatchingPins("example.com"));
     assertEquals(Collections.emptyList(), certificatePinner.findMatchingPins("a.b.example.com"));
+  }
+
+  @Test public void successfulFindMatchingPinsIgnoresCase() {
+    CertificatePinner certificatePinner = new CertificatePinner.Builder()
+        .add("EXAMPLE.com", certA1Sha256Pin)
+        .add("*.MyExample.Com", certB1Sha256Pin)
+        .build();
+
+    List<Pin> expectedPin1 = Arrays.asList(new Pin("EXAMPLE.com", certA1Sha256Pin));
+    assertEquals(expectedPin1, certificatePinner.findMatchingPins("example.com"));
+
+    List<Pin> expectedPin2 = Arrays.asList(new Pin("*.MyExample.Com", certB1Sha256Pin));
+    assertEquals(expectedPin2, certificatePinner.findMatchingPins("A.myexample.com"));
+  }
+
+  @Test public void unsuccessfulMatchIgnoresCase() {
+    CertificatePinner certificatePinner = new CertificatePinner.Builder()
+        .add("EXAMPLE.com", certA1Sha256Pin)
+        .add("*.MyExample.Com", certB1Sha256Pin)
+        .build();
+
+    try {
+      certificatePinner.check("example.com", Arrays.<Certificate>asList(certB1.certificate));
+      fail();
+    } catch (SSLPeerUnverifiedException expected) {
+    }
+
+    try {
+      certificatePinner.check("A.myexample.com", Arrays.<Certificate>asList(certA1.certificate));
+      fail();
+    } catch (SSLPeerUnverifiedException expected) {
+    }
   }
 }
